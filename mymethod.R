@@ -71,20 +71,24 @@ summary_counts <- combined_long %>%
   group_by(Species, Pathway) %>%
   mutate(Percent = Gene_Count / sum(Gene_Count))
 
-ggplot(summary_counts, aes(x = Pathway, y = TERM, size = Percent, color = ONTOLOGY)) +
-  geom_point(alpha = 0.7, position = position_jitter(width = 0.2, height = 0.3)) +
+ggplot(summary_counts, aes(x = Pathway, y = TERM, size = Percent, color = Pathway)) +
+  geom_point(alpha = 0.7) +
   facet_wrap(~ Species, scales = "free_y") +
   scale_size_continuous(range = c(3, 12), labels = scales::percent) +
+  scale_color_manual(values = c("Fermentation" = "#0072B2", "Resistance" = "#D55E00")) +
   theme_bw(base_size = 12) +
-  theme(axis.text.y = element_text(size = 8),
-        legend.position = "bottom") +
+  theme(
+    axis.text.y = element_text(size = 8),
+    axis.text.x = element_blank(),   # Remove x-axis text
+    axis.ticks.x = element_blank(),  # Remove x-axis ticks
+    legend.position = "none"
+  ) +
   labs(
     title = "Fermentation and Resistance Pathways in GO Terms",
-    x = "Pathway Category",
-    y = "GO Term",
-    color = "Ontology"
-  ) +
-  guides(size = "none")
+    x = NULL,   # Remove x-axis label
+    y = "GO Term"
+  )
+
 
 #try ggsave
 #try normalizing it by percent 
