@@ -1,0 +1,375 @@
+---
+title: "Yeast Genome Project"
+author: "Ilay Jacques Paz"
+date: "2025-12-09"
+bibliography: references.bib
+csl: nature.csl
+output: html_document
+---
+
+## Abstract
+
+Yeast species show strong variation in fermentation capacity and stress resistance for survival which can be applied to industrial settings. This study investigated genomic differences between Saccharomyces bayanus and Saccharomyces paradoxus to identify genes associated with fermentation and resistance. Using Oxford Nanopore long-read data, genome assemblies were generated and annotated to characterize functional gene content. Comparative analysis revealed that S. bayanus possessed a higher proportion of fermentation-related genes (8.5%) compared to S. paradoxus (7.9%), while resistance-associated genes were similarly enriched in S. bayanus (6.2%) versus S. paradoxus (5.7%). Unsurprisingly, S. bayanus, the domesticated yeast showed greater fermentation gene content than the supposedly more stress-resistant wild strain, S. paradoxus. However, S. bayanus was proven to have a greater proportion of resistance genes than the wild S. paradoxus.  These findings challenge assumptions about the trade-off between fermentation efficiency and stress tolerance, suggesting that domestic lineages may maintain diverse stress resistance capabilities. The genomic distinctions identified here provide insight into evolutionary adaptations that shaped yeast ecology and may inform strain improvement strategies for biotechnological applications.
+
+## Background
+
+Genomics is the comprehensive study of an organism's complete genetic material, the genes within it and their functions.[@williams2020] Genomics relies heavily on next-generation sequencing (NGS) technologies such as Oxford Nanopore, PacBio, Illumina which have revolutionized biological research by enabling rapid, high-throughput DNA sequencing at unprecedented scales.[@satam2023] NGS is utilized in diverse omics approaches, including genomics (whole-genome sequencing and targeted sequencing), transcriptomics (RNA-seq), epigenomics (epigenetic modifications) and metagenomics (microbial community analysis)2. Oxford Nanopore Technology (ONT) represents a distinct approach within NGS, generating long reads that improve genome assembly continuity, particularly in repetitive or structurally complex regions. Unlike platforms such as Illumina, which produce short reads, ONT's long reads make genome assembly much easier due to long reads behaving like large puzzle pieces.[@satam2023] ONT distinguishes itself from another NGS long read based platform PacBio by having a significantly higher data output per run.[@satam2023] This project focuses on comparing the genomes of Saccharomyces bayanus and Saccharomyces paradoxus to identify genes associated with fermentation efficiency and environmental stress responses. S. bayanus, widely used in winemaking and beermaking, while S. paradoxus is a wild yeast adapted to diverse natural environments with limited industrial use.[@rainieri2006; @nikulin2020] By assembling and annotating both genomes, this project aims to identify key genetic variations that reflect evolutionary divergence and functional specialization. It is expected that S. bayanus will have a higher proportion of fermentation-related genes, whereas S. paradoxus will show a greater proportion on stress resistance due to its wild nature, providing insights into adaptations relevant for industrial applications like local craft breweries, wineries and biorefineries. 
+
+## Methods
+
+All analyses were performed across two computing environments using R versions 4.4.2 and 4.4.0 on macOS systems (Sonoma 14.5 and macOS 15.7.2 respectively, aarch64-apple-darwin20 platform). Command-line bioinformatics tools were executed in a Unix-based terminal environment. Matrix operations utilized either the Accelerate framework BLAS or libRblas with LAPACK version 3.12.0. The locale was set to en_US.UTF-8 with time zones America/Los_Angeles and America/Vancouver. Oxford Nanopore Technologies long-read sequencing data were obtained S. bayanus (dataset LV3C-1_JST) and S. paradoxus (dataset CP8-A_JSN). Reference genomes were obtained from NCBI GenBank: S. bayanus strain FM677 (accession GCA_019431265.1, assembly ASM1943126v1, genome size 12.2 Mb, haploid assembly type, submitted by Saint Louis University on August 1, 2021) and S. paradoxus strain CBS432 (NCBI RefSeq accession GCF_002079055.1, GenBank accession GCA_002079055.1, genome size 12 Mb, haploid assembly type designated as neotype, submitted by SC on March 21, 2017).[@ncbi_bayanus2021; @ncbi_paradoxus2017] Initial quality assessment of raw Nanopore reads was performed using Sequali (version 1.0.2) to generate comprehensive quality control reports including read length distributions, quality score profiles, and base composition statistics.[@vorderman2025] Based on instructor guidance and examination of read length histograms from Sequali reports, reads were filtered using Filtlong version 0.3.1 with species-specific minimum length thresholds: 120 bp for S. bayanus and 140 bp for S. paradoxus.[@wick2025] These cutoffs were selected to retain sufficient high-quality data for assembly while removing short, low-quality reads that could compromise assembly contiguity. Genome assembly was performed using Flye version 2.9.6, an assembler specifically designed for long, error-prone reads that employs repeat graph architecture to resolve them.[@kolmogorov2019] Flye was executed with “--nano-hq” flag for high-quality Nanopore reads (>95% accuracy), with a genome size of 12 Mb (--genome-size 12m), and 8 threads (--threads 8) for both species. These parameters were selected to optimize assembly for Nanopore base calling with high per-read accuracy while leveraging parallel processing for computational efficiency.  Assembly completeness and structural accuracy were evaluated using two tools pulled from Docker QUAST and BUSCO. [@merkel2014]] QUAST version 5.2.0 was used to check and compare genome assemblies, providing rudimentary metrics for contiguity such as N50 and the number of contigs, along with more interesting metrics that evaluate the accuracy of the assembly such as misassemblies.[@mikheenko2023] Each assembled genome was aligned to its respective reference genome (S. bayanus assembly compared to GCA_019431265.1, S. paradoxus assembly compared to GCF_002079055.1) using default parameters. Metrics calculated included N50, total aligned length, genome fraction covered, number of contigs, largest contig size, NG50 (normalized to reference genome size), misassembly counts (including relocations, translocations, and inversions), and indel statistics. BUSCO (Benchmarking Universal Single-Copy Orthologs) version 6.0.0 was used to evaluate the completeness of the assembly by identifying the presence or absence of highly conserved, single-copy genes (orthologs) compared to a reference set for the saccharomycetaceae lineage.[@ditommaso2017] BUSCO was run in genome mode (-m genome) using the saccharomycetaceae_odb12 lineage dataset with 8 CPU threads (-c 8). A high BUSCO score indicates a more complete representation of the expected gene content for a given organism. BUSCO reports the percentage of complete (single-copy and duplicated), fragmented, and missing genes, providing an independent measure of assembly quality focused on biologically relevant gene content rather than just structural contiguity. Gene prediction was performed using Funannotate version 1.8.1, a comprehensive genome annotation pipeline designed for fungal genomes.[@palmer2020] Funannotate’ workflow included multiple steps: genome cleaning and sorting, repeat masking, gene prediction using multiple ab initio prediction algorithms integrated within the pipeline, and generation of standardized output files. Funannotate parameters were set to default values optimized for fungal genomes, with species name specified for each analysis (Saccharomyces bayanus and Saccharomyces paradoxus respectively). The pipeline produced protein-coding gene predictions in multiple formats including protein FASTA files for downstream functional annotation. Functional annotation of predicted proteins was conducted using the eggNOG database version 4.5.1 via eggNOG-mapper version 2.[@huertacepas2016] Protein sequences predicted by Funannotate were submitted to eggNOG-mapper using default parameters including automatic taxonomic scope assignment, diamond as the search method, and an e-value threshold of 0.001. The eggNOG database provides orthology assignments based on evolutionary relationships, enabling the transfer of functional annotations including Gene Ontology (GO) terms and Clusters of Orthologous Groups (COG) functional categories. Annotation results were exported in Excel format (.xlsx) containing comprehensive functional assignments for each predicted gene, including COG categories, GO terms (biological process, molecular function, cellular component), KEGG pathways, and protein domain predictions.
+
+R Session Info For Mac Computer Lab T450
+R version 4.4.0 (2024-04-24)
+## Platform: aarch64-apple-darwin20
+## Running under: macOS 15.7.2
+## 
+## Matrix products: default
+## BLAS:   /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRblas.0.dylib 
+## LAPACK: /Library/Frameworks/R.framework/Versions/4.4-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.0
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## time zone: America/Vancouver
+## tzcode source: internal
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## loaded via a namespace (and not attached):
+##  [1] compiler_4.4.0    fastmap_1.2.0     cli_3.6.5         tools_4.4.0      
+##  [5] htmltools_0.5.8.1 rstudioapi_0.17.1 yaml_2.3.10       rmarkdown_2.30   
+##  [9] knitr_1.50        xfun_0.53         digest_0.6.37     rlang_1.1.6      
+## [13] evaluate_1.0.5
+## Results
+
+Initial quality assessment of raw Oxford Nanopore reads was performed using Sequali to evaluate read length distributions and identify optimal filtering parameters. The Sequali tool generated comprehensive read length histograms for S. bayanus and S. paradoxus, revealing substantial proportions of short reads that could compromise assembly contiguity. The unfiltered S. bayanus dataset exhibited a read length distribution with notable abundance of sequences below 120 bp, while the S. paradoxus dataset showed similar set of short reads below 140 bp. These quality control metrics informed the selection of species-specific minimum length thresholds for downstream filtering.
+
+```{bash, eval=FALSE}
+conda create -n sequali_env python=3.10 -c conda-forge
+conda activate sequali_env
+conda install sequali=2.9.6 -c conda-forge -c bioconda
+sequali --outdir ~/sequali_reports 'Saccharomyces bayanus.fastq'
+sequali --outdir ~/sequali_reports 'saccharomycesParadoxus.fastq'
+filtlong --min_length 120 'Saccharomyces bayanus.fastq' > bayanus_filtered.fastq
+sequali --outdir ~/sequali_reports bayanus_filtered.fastq
+filtlong --min_length 140 'saccharomycesParadoxus.fastq' > paradoxus_filtered.fastq
+sequali --outdir ~/sequali_reports paradoxus_filtered.fastq
+```
+
+![**Figure 1.** Read length distribution of S. bayanus before Filtlong filtering](bayanus.png)
+
+![**Figure 2.** Read length distribution of S. paradoxus before Filtlong filtering](paradoxus.png)
+Following Filtlong filtering with species-specific minimum length thresholds (120 bp for S. bayanus and 140 bp for S. paradoxus), short and poor-quality reads were effectively removed from both datasets. The filtered read length distributions exhibited markedly improved profiles, with the majority of reads concentrated in the mid-to-long range suitable for de novo assembly. Quality metrics demonstrated the effectiveness of filtering: the N50 read length for S. bayanus increased from 1,783 bp to 1,809 bp, while S. paradoxus showed improvement from 2,487 bp to 2,542 bp. These enhanced read quality profiles provided optimal input for subsequent genome assembly.
+
+![**Figure 3.** Read length distribution of S. bayanus after Filtlong filtering](Bayanusfilt.png)
+
+![**Figure 4.** Read length distribution of S. paradoxus after Filtlong filtering](paradoxusfilt.png)
+
+### Assembly
+
+Genome assembly with generated contiguous representations for both species. The S. bayanus assembly yielded a total length of 10,163,590 bp with an N50 of 11,571 bp and 1293 fragments, representing approximately 84% of the expected 12 Mb genome size. In contrast, the S. paradoxus assembly produced a total length of 8,868,681 bp with a superior N50 of 17,034 bp and 729 contigs, covering approximately 74% of the expected genome size. Despite the smaller total assembly size, S. paradoxus exhibited higher assembly contiguity as evidenced by the high N50 value. The largest fragment for S. bayanus measured 43665 bp, while S. paradoxus achieved 71455 bp, further supporting superior contiguity in the latter assembly. Mean coverage for S. bayanus was 9, compared to 7 for S. paradoxus, reflecting differences in read depth distribution.
+
+```{bash, eval=FALSE}
+flye --nano-hq data/bayanus_filtered.fastq --out-dir flye_output/ --threads 8 --genome-size 12m
+#Total length:   10163590
+#Fragments:      1293
+#Fragments N50:  11571
+#Largest frg:    43665
+#Scaffolds:      0
+#Mean coverage:  9
+
+flye --nano-hq data/paradoxus_filtered.fastq--out-dir flye_outputP/ --threads 8 --genome-size 12m
+#Total length:   8868681
+#Fragments:      729
+#Fragments N50:  17034
+#Largest frg:    71455
+#Scaffolds:      0
+#Mean coverage:  7
+
+```
+
+### BUSCO
+
+BUSCO analysis using the saccharomycetaceae_odb12 lineage dataset provided independent evaluation of assembly completeness through identification of conserved single-copy orthologs. The S. bayanus assembly demonstrated 77.9% genome completeness and the S. paradoxus assembly achieved 70.1% genome completeness. These completeness scores indicate that both assemblies successfully captured the majority of expected core gene content for Saccharomycetaceae, though some fragmentation and gene loss relative to the reference set was evident. The moderate completeness scores suggest either incomplete assembly of certain genomic regions or potential biological divergence from the reference ortholog set.
+
+```{bash, eval=FALSE}
+export PATH="$PATH:/Applications/Docker.app/Contents/Resources/bin/"
+type docker
+docker login
+docker run --rm \-v "":/data \-w /data \ezlabgva/busco:v6.0.0_cv1 \busco -i assembly.fasta -o busco_output -l saccharomycetaceae_odb12 -m genome -c 8
+#bayanus
+docker run --rm \-v "":/data \-w /data \ezlabgva/busco:v6.0.0_cv1 \busco -i assemblyP.fasta -o busco_outputP -l saccharomycetaceae_odb12 -m genome -c 8
+#paradoxus 
+#NOTE FILL IN WHERE YOUR DATA IS WHERE THERE ARE ""
+```
+
+### QUAST
+
+QUAST analysis comparing assembled genomes to their respective reference sequences revealed substantial differences in alignment metrics between species. The S. bayanus assembly aligned to only 25.9% of its reference genome (GCA_019431265.1), with 6 misassemblies detected comprising 2 relocations, 4 translocations, and 0 inversions.and 1,248.07 mismatches per 100 kbp. In stark contrast, the S. paradoxus assembly covered 71.7% of its reference genome (GCF_002079055.1), though with a higher count of 34 misassemblies and substantially fewer mismatches at 234.13 per 100 kbp. In S. paradoxus misassemblies comprising 23 relocations, 11 translocations, and 0 inversions. The NG50 value for S. paradoxus was 11,874 while S. bayanus did not have one. The dramatically lower genome fraction coverage in S. bayanus suggests substantial genomic divergence from the reference strain or potential assembly challenges in capturing strain-specific sequences.
+
+```{bash, eval=FALSE}
+
+docker pull quay.io/biocontainers/quast:5.3.0--py313pl5321h5ca1c30_2
+#bayanus
+-v "":/data \
+-w /data \
+quay.io/biocontainers/quast:5.3.0--py313pl5321h5ca1c30_2 \
+quast.py assembly.fasta \
+-r /data/bayanusreferenceassembly.fna \-o quast_output
+#paradoxus
+docker run --rm \
+-v "":/data \
+-w /data \
+quay.io/biocontainers/quast:5.3.0--py313pl5321h5ca1c30_2 \
+quast.py assemblyP.fasta \
+-r /data/paradoxusreferenceassembly.fna \
+-o quastP_output
+
+#NOTE FILL IN WHERE YOUR DATA IS WHERE THERE ARE ""
+```
+![**Figure 5.** QUAST Short Report for S. bayanus](qbayanus.png)
+![**Figure 6.** QUAST Short Report for S. paradoxus](qparadoxus.png)
+### Annotation
+Gene prediction performed using Funannotate v1.8.1 generated comprehensive protein-coding gene sets for both species, which were subsequently functionally annotated using eggNOG-mapper v2 and the eggNOG database v4.5. The annotation pipeline assigned Clusters of Orthologous Groups (COG) categories and Gene Ontology (GO) terms to predicted proteins, enabling comparative functional genomics analysis. Comparative analysis of COG category distributions revealed that S. bayanus' genome possessed 7.9% fermentation-related genes and 5.7% as resistance-related genes based on COG functional annotations. S. paradoxus genome contained  8.5%  fermentation-related genes and 6.2%  resistance-related genes. Keyword-based searches within GO terms and COG descriptions for fermentation-associated processes were ("glycolysis," "ethanol," "alcohol," "anaerobic") and resistance-related keyword searches were ("stress," "resistance," "defense"). These functional annotations provide the foundation for comparative analysis of metabolic capabilities between the two species.
+```{bash, eval=FALSE}
+#bayanus
+docker run --rm \-v "":/data \-w /data \--platform linux/amd64 \nextgenusfs/funannotate \funannotate mask -i assembly.fasta -o tr_masked_assembly.fasta
+#paradoxus
+docker run --rm \-v "":/data \-w /data \--platform linux/amd64 \nextgenusfs/funannotate\funannotate predict -i tr_masked_assembly.fasta -o /data/output -s "Saccharomyces bayanus"
+#paradoxus
+docker run --rm \-v "/Users/ipaz00/Downloads/BIOL4315_R/project/BIOL-4315-project":/data \-w /data \--platform linux/amd64 \nextgenusfs/funannotate\funannotate mask -i assemblyP.fasta -o tr_masked_assemblyP.fasta
+docker run --rm \-v "/Users/ipaz00/Downloads/BIOL4315_R/project/BIOL-4315-project":/data \-w /data \--platform linux/amd64 \nextgenusfs/funannotate\funannotate predict -i tr_masked_assemblyP.fasta -o /data/outputP -s "Saccharomyces paradoxus"
+
+#NOTE FILL IN WHERE YOUR DATA IS WHERE THERE ARE ""
+
+```
+![Figure 7. EggnogDB Annotation Excel Sheet for S. Paradoxus](eggnog.png)
+
+
+```{r echo=FALSE, fig.cap="**Figure 8.** Relative abundance of COG categories in *S. paradoxus* and *S. bayanus* genomes. Bubble size is proportional to the percentage of genes assigned to each functional group (Fermentation = C+G; Resistance = V+M+W+P+Q; Other = all remaining categories)."}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(RColorBrewer)
+library(scales)
+
+file_path1 <- "PARADOXUSout.emapper.annotations.xlsx"
+file_path2 <- "BAYANUSout.emapper.annotations.xlsx"
+
+process_cog <- function(file_path, genome_name) {
+  data <- read_excel(file_path, skip = 2)
+  cog_data <- data$COG_category
+  cog_data <- cog_data[!is.na(cog_data)]
+  cog_data <- trimws(cog_data)
+  cog_data <- cog_data[nchar(cog_data) == 1]
+ 
+  category <- case_when(
+    cog_data %in% c("C", "G") ~ "Fermentation",
+    cog_data %in% c("V", "M", "W", "P", "Q") ~ "Resistance",
+    TRUE ~ "Other"
+  )
+ 
+  category_counts <- as.data.frame(table(category))
+  colnames(category_counts) <- c("Function", "Count")
+  category_counts <- category_counts %>%
+    mutate(RelAbundance = Count / sum(Count),
+           Genome = genome_name)
+ 
+  category_counts$Function <- factor(category_counts$Function, levels = c("Fermentation", "Resistance", "Other"))
+ 
+  return(category_counts)
+}
+
+data1 <- process_cog(file_path1, "Paradoxus")
+data2 <- process_cog(file_path2, "Bayanus")
+
+# Combine into one data frame
+combined_data <- bind_rows(data2, data1)
+
+# Repeat rows so bubbles appear multiple times (fake category)
+combined_data <- combined_data %>%
+  slice(rep(1:n(), each = 6)) %>% # repeat each row 6 times
+  mutate(FakeY = 1) # all on the same y-axis value
+
+# Color-blind friendly palette
+cb_palette <- c(
+  "Fermentation" = brewer.pal(3, "Dark2")[1],
+  "Resistance" = brewer.pal(3, "Dark2")[2],
+  "Other" = brewer.pal(3, "Dark2")[3]
+)
+
+# Bubble plot with all bubbles on the same horizontal line
+ggplot(combined_data, aes(x = Function, y = FakeY, size = RelAbundance, color = Function)) +
+  geom_point(alpha = 0.7) +
+  geom_text(aes(label = scales::percent(RelAbundance, accuracy = 0.1)),
+            vjust = -1.5, size = 5) +
+  scale_size(range = c(5, 15)) +
+  scale_color_manual(values = cb_palette) +
+  labs(title = "COG Category Relative Abundance by Genome",
+       x = NULL,
+       y = NULL) + # remove y-axis label
+  theme_bw(base_size = 16) +
+  theme(
+    legend.position = "none",
+    axis.title = element_text(size = 18),
+    axis.text.y = element_blank(), # remove y-axis text
+    axis.ticks.y = element_blank(), # remove y-axis ticks
+    axis.ticks.x = element_blank(), # optional: remove x-axis ticks
+    plot.title = element_text(size = 20, face = "bold")
+  ) +
+  facet_wrap(~ Genome)
+```
+```{r, echo=FALSE,fig.cap="**Figure 9.** Fermentation-Related Gene Ontology (GO) Terms in S. bayanus and S. paradoxus" }
+library(GO.db)
+library(AnnotationDbi)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readxl)
+library(ggplot2)
+
+# Load data
+para <- read_xlsx("PARADOXUSout.emapper.annotations.xlsx", skip = 2)
+baya <- read_xlsx("BAYANUSout.emapper.annotations.xlsx", skip = 2)
+
+# Same processing function (slightly cleaned)
+process_go <- function(df, species) {
+  df <- as.data.frame(df)
+  names(df) <- str_trim(names(df))
+  go_col <- names(df)[str_which(names(df), regex("^GO", ignore_case = TRUE))][1]
+  gene_col <- names(df)[str_which(names(df), regex("^query$", ignore_case = TRUE))][1]
+  df <- df[, c(gene_col, go_col), drop = FALSE]
+  names(df) <- c("Gene", "GO_IDs")
+  df$GO_IDs <- as.character(df$GO_IDs)
+  df <- separate_rows(df, GO_IDs, sep = ",|;|\\|")
+  df <- df %>% filter(GO_IDs != "", !is.na(GO_IDs))
+  
+  go_info <- AnnotationDbi::select(GO.db, keys = unique(df$GO_IDs), columns = c("GOID","TERM","ONTOLOGY"), keytype = "GOID")
+  df <- merge(df, go_info, by.x = "GO_IDs", by.y = "GOID", all.x = TRUE)
+  df$ONTOLOGY <- recode(df$ONTOLOGY, MF = "Molecular Function", BP = "Biological Process", CC = "Cellular Component")
+  df$Species <- species
+  return(df)
+}
+
+para_go <- process_go(para, "S. paradoxus")
+baya_go <- process_go(baya, "S. bayanus")
+all_go <- bind_rows(para_go, baya_go) %>%
+  filter(ONTOLOGY %in% c("Biological Process", "Molecular Function"))
+
+# Fermentation keywords (expanded a bit for better hits)
+ferment_terms <- c( "glycolysis", "ethanol", "alcohol", "anaerobic")
+
+fermentation <- all_go %>%
+  filter(str_detect(str_to_lower(TERM), paste(ferment_terms, collapse = "|"))) %>%
+  group_by(Species, TERM) %>%
+  summarise(Genes = n_distinct(Gene), .groups = "drop") %>%
+  group_by(Species) %>%
+  mutate(Percent = Genes / sum(Genes) * 100) %>%
+  ungroup() %>%
+  mutate(TERM = str_trunc(TERM, 70))
+
+ggplot(fermentation, aes(x = Species, y = reorder(TERM, Percent))) +
+  geom_point(aes(size = Percent), color = "#1b9e77", alpha = 0.85) +
+  
+  geom_text(
+    aes(label = Genes),
+    hjust = 0,                     # left-align text so it stays to the right
+    nudge_x = 0.15,                # <<–– pushes numbers right (increase if needed)
+    size = 2.5
+  ) +
+  
+  scale_size_continuous(range = c(4, 12), guide = "none") +
+  labs(title = "Fermentation-Related GO Terms", y = "", x = "") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"),
+        axis.text.y = element_text(size = 8.5),
+        panel.grid.major.y = element_blank())
+```
+```{r, echo=FALSE, fig.cap="**Figure 10.**Resistance and Stress Related Gene Ontology (GO) Terms in S. bayanus and S. paradoxus"}
+library(GO.db)
+library(AnnotationDbi)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(readxl)
+library(ggplot2)
+
+# Same data loading and processing as above
+para <- read_xlsx("PARADOXUSout.emapper.annotations.xlsx", skip = 2)
+baya <- read_xlsx("BAYANUSout.emapper.annotations.xlsx", skip = 2)
+
+process_go <- function(df, species) {
+  df <- as.data.frame(df)
+  names(df) <- str_trim(names(df))
+  go_col <- names(df)[str_which(names(df), regex("^GO", ignore_case = TRUE))][1]
+  gene_col <- names(df)[str_which(names(df), regex("^query$", ignore_case = TRUE))][1]
+  df <- df[, c(gene_col, go_col), drop = FALSE]
+  names(df) <- c("Gene", "GO_IDs")
+  df$GO_IDs <- as.character(df$GO_IDs)
+  df <- separate_rows(df, GO_IDs, sep = ",|;|\\|")
+  df <- df %>% filter(GO_IDs != "", !is.na(GO_IDs))
+  
+  go_info <- AnnotationDbi::select(GO.db, keys = unique(df$GO_IDs),
+                                   columns = c("GOID", "TERM", "ONTOLOGY"),
+                                   keytype = "GOID")
+  df <- merge(df, go_info, by.x = "GO_IDs", by.y = "GOID", all.x = TRUE)
+  df$ONTOLOGY <- recode(df$ONTOLOGY,
+                        MF = "Molecular Function",
+                        BP = "Biological Process",
+                        CC = "Cellular Component")
+  df$Species <- species
+  return(df)
+}
+
+para_go <- process_go(para, "S. paradoxus")
+baya_go <- process_go(baya, "S. bayanus")
+
+all_go <- bind_rows(para_go, baya_go) %>%
+  filter(ONTOLOGY %in% c("Biological Process", "Molecular Function"))
+
+# Resistance/stress keywords
+resistance_terms <- c(
+  "stress", "resistance", "defense")
+
+resistance <- all_go %>%
+  filter(str_detect(str_to_lower(TERM),
+                    paste(resistance_terms, collapse = "|"))) %>%
+  group_by(Species, TERM) %>%
+  summarise(Genes = n_distinct(Gene), .groups = "drop") %>%
+  group_by(Species) %>%
+  mutate(Percent = Genes / sum(Genes) * 100) %>%
+  ungroup() %>%
+  mutate(TERM = str_trunc(TERM, 70))
+
+# --- UPDATED VISUALIZATION WITH LABELS, NUDGE, SPACING ---
+ggplot(resistance, aes(x = Species, y = reorder(TERM, Percent))) +
+  geom_point(aes(size = Percent), color = "#d95f02", alpha = 0.85) +
+  
+  # Add gene counts with spacing before the number
+  geom_text(aes(label = paste0("   ", Genes)),   # 3 spaces of padding
+            nudge_x = 0.25,                     # shift text to the right
+            size = 2.5, hjust = 0) +            # left align
+  
+  scale_size_continuous(range = c(4, 12), guide = "none") +
+  labs(title = "Resistance & Stress Response GO Terms",
+       y = "", x = "") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(face = "bold"),
+        axis.text.y = element_text(size = 8),
+        panel.grid.major.y = element_blank())
+```
+## Discussion
+The quality control and assembly workflow revealed interesting characteristics in the genomic datasets for S. bayanus and S. paradoxus that have important implications for analyzing downstream results. The unfiltered Sequali read length histograms demonstrated that both species had substantial short reads requiring removal to improve future assembly. This superior read length distribution in S. paradoxus likely contributed to the higher assembly contiguity observed in Flye assembly metrics, where S. paradoxus achieved an N50 of 17034 bp despite a smaller total assembly size. The complicated relationship between dataset size and assembly quality in this study where S. bayanus possessed more  sequence data yet yielded lower-quality metrics—highlights the importance of read length distribution and coverage over raw data quantity. The N50 metric, representing the fragment length at which 50% of the total assembly is contained in contigs of that size or larger, serves as the best indicator of assembly contiguity. The BUSCO completeness scores of 77.9% for S. bayanus and 70.1% for S. paradoxus indicate that both assemblies successfully captured the majority of conserved core genes expected in Saccharomycetaceae genomes, though neither achieved a completeness score greater than 95 typically seen in reference genome in a perfect world. It is important to recognize that moderate BUSCO scores do not indicate a bad assembly; rather, they reflect the reality including of gene loss events or potential abscences from the OrthoDB reference set. The saccharomycetaceae_odb12 lineage dataset is based on a consensus of sequenced Saccharomycetaceae genomes and may not perfectly represent the gene content of all strains. The stark difference in QUAST genome fraction coverage between S. bayanus (25.9%) and S. paradoxus (71.7%) relative to their respective reference genomes provides critical insight into variation within these species. The dramatically low genome fraction of S. bayanus strongly suggests that the Langara College isolate (dataset LV3C-1_JST) represents a strain with substantial genomic divergence from the reference strain FM677 (GCA_019431265.1). This divergence could manifest as large-scale structural variations, presence of strain-specific genomic islands, differences in repeat content, or even taxonomic misclassification of one of the strains.
+The low misassembly count (6) combined with high mismatch rate (1,248.07 per 100 kbp) in S. bayanus suggests that the assembly itself is structurally sound, but the sequences diverge substantially at the nucleotide level from the reference. This pattern is more consistent with genuine biological divergence than with technical assembly artifacts. In contrast, the S. paradoxus assembly showed higher congruence with its reference (CBS432, GCF_002079055.1), covering 71.7% of the reference genome. However, the elevated misassembly count (34) compared to S. bayanus (6) warrants attention. The substantially lower mismatch rate (234.13 per 100 kbp) and indel rate (141.16 per 100 kbp) in S. paradoxus compared to S. bayanus further support that the S. paradoxus isolate is more closely related to its reference strain, facilitating more confident comparative genomic interpretations. The comparative functional annotation revealed unexpected patterns in fermentation and stress resistance gene content that challenge initial predictions. Contrary to the hypothesis that the domesticated S. bayanus would show enrichment in fermentation genes while the wild S. paradoxus would exhibit greater stress resistance capacity, both species showed similar proportions of genes in these functional categories, with S. bayanus actually demonstrating slightly higher representation in both fermentation (8.5% vs. 7.9%) and resistance (6.2% vs. 5.7%) gene categories.However, these quantitative comparisons must be interpreted with caution given the substantial differences in assembly quality and completeness between the two species. The dramatically different genome fraction coverage values (25.9% vs. 71.7%) indicate that we are comparing genomic datasets of fundamentally different completeness and potentially different biological content.Additionally, the reliance on keyword-based searches for functional categorization, while useful for broad comparisons, introduces limitations including potential misclassification of genes based on annotation text matching rather than true functional equivalence. A major limitation in the annotation-based comparative analysis is the constraint of visualizing large numbers of genes in figures. This limitation is particularly problematic for complex, multigenic phenotypes like fermentation and stress resistance, where dozens to hundreds of genes contribute to the overall physiological capacity. The keyword-based approach also risks missing functionally relevant genes that are annotated with synonymous or related terms not included in the search parameters, or conversely including false positives where keywords appear in annotations for genes with tangential functional relevance. Contrary to the classical expectation that domestication for fermentation relaxes selection of stress tolerance, the sequenced S. bayanus isolate appears to devote a higher proportion of its predicted gene content to both fermentation-related genes (8.5% vs. 7.9% ) and stress-resistance genes (6.2% vs. 5.7%). This pattern challenges the assumption of a simple trade-off between rapid fermentation and environmental resilience. The simultaneous enrichment of both functional categories in S. bayanus suggests that fermentation itself does not reduce  stress-response systems even in industrial settings. Thus, high fermentation capacity and stress tolerance may be functionally coupled rather than antagonistic traits. However, these conclusions must remain provisional. Until comparable, high-quality assemblies are obtained for both strains, quantitative gene-content comparisons remain unreliable. If confirmed with improved assemblies, the apparent co-enrichment of fermentation and stress-tolerance genes in domesticated S. bayanus would highlight the untapped potential of existing industrial strains for further optimisation. Conversely, the extensive genomic divergence of the sequenced S. bayanus isolate from its reference suggesting substantial strain-level variation underscores the value of reference genomes.S. paradoxus, may harbour alternative stress-resistance mechanisms or allelic variants not captured by COG and GO categories. Local craft breweries, wineries, and biorefineries in British Columbia could benefit from systematic characterisation of regionally isolated strains. Such isolates may exhibit fermentation profiles and stress tolerances finely tuned to local substrates and conditions, potentially conferring distinctive flavour compounds or enhanced process robustness. The most severe limitation is the marked disparity in assembly completeness (25.9% vs. 71.7% genome fraction coverage), which precludes reliable quantitative comparison of gene content between the two species. Future work should prioritise: Ensuring the datasets are better, scaffolding to produce chromosome-level references, multiple strains of S. bayanus and S.paradoxus being sequenced,  taxonomic validation that the sequenced S. bayanus is actually S. bayanus. Only with higher-quality,complete genomes can reasonable evolutionary and biotechnological conclusions be drawn from comparative gene-content analysis in S. bayanus and S. paradoxus.
+
+
+
+
+```{r}
+sessionInfo()
+```
+
+# References
+
